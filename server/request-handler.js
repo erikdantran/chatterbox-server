@@ -12,17 +12,35 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 var url = require('url');
-// var utilities = require('./utilities.js');
+var fs = require('fs');
 
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
+  'access-control-allow-headers': '*',
+  // 'content-type, accept',
   'access-control-max-age': 10 // Seconds.
 };
 
+// var result = {
+//   results: [{
+//     'username': 'Mel Brooks',
+//     'text': 'It\'s good to be the king',
+//     'roomname': 'lobby'
+//   }]
+// };
+
 var result = {
-  results: []
+  results: [{
+    username: 'Mel Brooks',
+    text: 'It\'s good to be the king',
+    roomname: 'lobby'
+  },
+  {
+    username: 'steve',
+    text: 'sfsefwef',
+    roomname: 'lobby'
+  }]
 };
 
 
@@ -39,12 +57,32 @@ var requestHandler = function (request, response) {
 
   var actions = request.method; // GET, POST
   var statusCode = 200; // The outgoing status.
-  var path = 'classes/messages';
+  var path = request.url;
   var headers = defaultCorsHeaders;
   // Tell the client we are sending them plain text.
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
   headers['Content-Type'] = 'text/plain';
+
+
+  // if (path === '/classes/messages') {
+  // fs.readFile('chatterbox.html', function (error, data) {
+  //   if (error) {
+  //     response.writeHead(404);
+  //     response.write(error);
+  //     response.end();
+  //   } else {
+  //     response.writeHead(200, { 'Content-Type': 'text/html' });
+  //     response.write(data);
+  //     response.end();
+  //   }
+  // });
+  // }
+
+
+  // const stream = fs.createReadStream('chatterbox.html');
+
+  // stream.pipe(response);
 
   // Do some basic logging.
   //
@@ -54,12 +92,16 @@ var requestHandler = function (request, response) {
 
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-
-  if (actions === 'GET' && request.url === '/classes/messages') {
+  if (actions === 'OPTIONS' && request.url.includes('/classes/messages')) {
+    response.writeHead(200, headers);
+    response.end();
+  } else if (actions === 'GET' && request.url.includes('/classes/messages')) {
+    console.log('we reached the GET');
     response.writeHead(statusCode, headers);
+    // response.end();
     response.end(JSON.stringify(result));
 
-  } else if (actions === 'POST' && request.url === '/classes/messages') {
+  } else if (actions === 'POST' && request.url.includes('/classes/messages')) {
     statusCode = 201;
     headers['Content-Type'] = 'application/json';
     var data;
@@ -69,12 +111,16 @@ var requestHandler = function (request, response) {
       body += chunk;
     }).on('end', function () {
       data = JSON.parse(body);
-      console.log('after parse: ', data);
+      // console.log('after parse: ', data);
       result.results.push(data);
       response.writeHead(statusCode, headers);
       console.log('result: ', result.results);
       response.end(JSON.stringify(result.results));
     });
+    // create OPTIONS
+    // } else if (actions === 'OPTIONS' && request.url.includes('/classes/messages')) {
+    //   response.writeHead(200, headers);
+    //   response.end();
 
   } else {
     statusCode = 404;
